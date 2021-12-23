@@ -34,6 +34,13 @@ class TestwizParser(TestCase):
                 endpoint.clean()
         self.assertEqual(3, len(findings))
 
+    def test_wiz_parser_with_one_secret_and_vuln_findings(self):
+        testfile = open("dojo/unittests/scans/wiz/wiz_one_secret_vul.json")
+        parser = wizParser()
+        findings = parser.get_findings(testfile, Test())
+        testfile.close()
+        self.assertEqual(4, len(findings))
+
     def test_wiz_parser_empty_with_error(self):
         with self.assertRaises(ValueError) as context:
             testfile = open("dojo/unittests/scans/wiz/empty_with_error.json")

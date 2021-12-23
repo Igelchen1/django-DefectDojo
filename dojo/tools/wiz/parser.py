@@ -9,10 +9,10 @@ class wizParser(object):
     """
 
     def get_scan_types(self):
-        return ["wiz Scan"]
+        return ["Wiz Scan"]
 
     def get_label_for_scan_types(self, scan_type):
-        return "wiz Scan"
+        return "Wiz Scan"
 
     def get_description_for_scan_types(self, scan_type):
         return "wiz report file can be imported in JSON format (option --json)."
@@ -30,18 +30,20 @@ class wizParser(object):
 
 
         items = {}
-        if 'result' in tree:
+        if tree['result']:
             resultTree = tree['result']
-            if 'osPackages' in resultTree:
+            # Retrieves vulnerabilities found in libraries from json
+            if resultTree['osPackages']:
                 osPackagesTree = resultTree['osPackages']
-
                 for package in osPackagesTree:
                     for vulnerability in package['vulnerabilities']: 
                         item = get_item(vulnerability, package["name"], package["version"], test)
                         unique_key = str("osPackages" + str(package['name']  + str(
                             package['version']) +str(item.cve + str(item.severity))))
                         items[unique_key] = item
-            if 'libraries' in resultTree:
+
+            # Retrieves vulnerabilities found in libraries from json
+            if resultTree['libraries']:
                 librariesTree = resultTree['libraries']
                 for package in librariesTree:
                     for vulnerability in package['vulnerabilities']: 
@@ -50,38 +52,18 @@ class wizParser(object):
                             package['version']) +str(item.cve + str(item.severity))))
                         items[unique_key] = item
 
-        for it in list(items.values()):
-            print(it)
+            # Retrieves secrets from json
+            if resultTree['secrets']:
+                secretsTree = resultTree['secrets']
+                for secret in secretsTree:
+                    item = get_secret(secret, test)
+                    unique_key = str("secrets" + str(secret['type']  + str(
+                        secret['description']) + str(item.severity)))
+                    items[unique_key] = item
 
         return list(items.values())
 
 
-
-'''
-def get_items(self, tree, test):
-        items = {}
-        if 'result' in tree:
-            resultTree = tree['result']
-            if 'osPackages' in resultTree:
-                osPackagesTree = resultTree['osPackages']
-
-                for package in osPackagesTree:
-                    for vulnerability in package['vulnerabilities']: 
-                        item = get_item(vulnerability, package["name"], package["version"], test)
-                    unique_key = str(resultTree['scanOriginResource']["name"] + str(package['name']  + str(
-                        package['version']) + str(item.severity)))
-                    items[unique_key] = item
-
-                librariesTree = resultTree['libraries']
-                for package in librariesTree:
-                    for vulnerability in package['vulnerabilities']: 
-                        item = get_item(vulnerability, package["name"], package["version"], test)
-                    unique_key = str(resultTree['scanOriginResource']["name"] + str(package['name']  + str(
-                        package['version']) + str(item.severity)))
-                    items[unique_key] = item
-            
-        return list(items.values())
-'''
 
 
 def get_item(vulnerability, package, version, test):
@@ -108,7 +90,35 @@ def get_item(vulnerability, package, version, test):
         )
 
     return finding 
- 
+
+
+def get_secret(secret, test):
+
+    # create the finding object
+    finding = Finding(
+        title='Secret found in: ' + str(secret['path']) + ' of type ' + str(secret['type']).lower(),
+        test=test,
+        severity="Critical",
+        description= 'Wiz found a secret in Ln '+str(secret['lineNumber']) + 
+            ", Col: "+str(secret['offset']) +". Path: "+str(secret['path']) + 
+            ".\nDescription: "+ secret['description'] +
+            ".\nType: "+ secret['type'] + 
+            ".\nSnippet: "+ secret['snippet']+
+            ".\nIsLongTerm: "+str(secret['details']['isLongTerm'])+".",
+        mitigation='Verify and delete critical key material.',
+        references=None,
+        component_name=str(secret['path']),
+        component_version="",
+        false_p=False,
+        duplicate=False,
+        out_of_scope=False,
+        mitigated=None,
+        severity_justification="",
+        impact="Critical"
+        )
+
+    return finding 
+
 
 def convert_severity(severity):
     if severity.lower() == 'critical':
