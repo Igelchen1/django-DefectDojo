@@ -38,19 +38,23 @@ class wizParser(object):
                 for package in osPackagesTree:
                     for vulnerability in package['vulnerabilities']: 
                         item = get_item(vulnerability, package["name"], package["version"], test)
-                    unique_key = str(resultTree['__typename'] + str(package['name']  + str(
-                        package['version']) + str(item.severity)))
-                    items[unique_key] = item
-
+                        unique_key = str("osPackages" + str(package['name']  + str(
+                            package['version']) +str(item.cve + str(item.severity))))
+                        items[unique_key] = item
+            if 'libraries' in resultTree:
                 librariesTree = resultTree['libraries']
                 for package in librariesTree:
                     for vulnerability in package['vulnerabilities']: 
                         item = get_item(vulnerability, package["name"], package["version"], test)
-                    unique_key = str(resultTree['__typename'] + str(package['name']  + str(
-                        package['version']) + str(item.severity)))
-                    items[unique_key] = item
-            
+                        unique_key = str("libraries" + str(package['name']  + str(
+                            package['version']) +str(item.cve + str(item.severity))))
+                        items[unique_key] = item
+
+        for it in list(items.values()):
+            print(it)
+
         return list(items.values())
+
 
 
 '''
@@ -86,7 +90,7 @@ def get_item(vulnerability, package, version, test):
 
     # create the finding object
     finding = Finding(
-        title=vulnerability['name'] + 'in: ' + package + ' - ' + version,
+        title=vulnerability['name'] + ' in: ' + package + ' - ' + version,
         cve=vulnerability['name'],
         test=test,
         severity=convert_severity(vulnerability['severity']),
